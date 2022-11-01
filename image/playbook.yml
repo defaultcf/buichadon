@@ -1,0 +1,74 @@
+---
+# playbook.yml
+- name: 'Provision Image'
+  hosts: default
+  become: true
+
+  vars:
+    ruby_version: 3.0.3
+
+  tasks:
+    - name: Install system dependencies
+      package:
+        name:
+          - curl
+          - wget
+          - gnupg
+          - apt-transport-https
+          - lsb-release
+          - ca-certificates
+          - acl # become を上手く機能するために必要
+        state: present
+
+    - name: Install Node.js
+      shell: |
+        curl -sL https://deb.nodesource.com/setup_16.x | bash -
+        apt install -y nodejs
+
+    - name: Install system packages
+      package:
+        name:
+          - imagemagick
+          - ffmpeg
+          - libpq-dev
+          - libxml2-dev
+          - libxslt1-dev
+          - file
+          - git-core
+          - g++
+          - libprotobuf-dev
+          - protobuf-compiler
+          - pkg-config
+          - nodejs
+          - gcc
+          - autoconf
+          - bison
+          - build-essential
+          - libssl-dev
+          - libyaml-dev
+          - libreadline6-dev
+          - zlib1g-dev
+          - libncurses5-dev
+          - libffi-dev
+          - libgdbm-dev
+          - nginx
+          - redis-server
+          - redis-tools
+          - postgresql
+          - postgresql-contrib
+          - certbot
+          - python3-certbot-nginx
+          - libidn11-dev
+          - libicu-dev
+          - libjemalloc-dev
+          - rbenv
+        state: present
+
+    - name: Add user, mastodon
+      user:
+        name: mastodon
+        #shell: /sbin/nologin
+
+    - name: Install ruby
+      shell: rbenv install {{ ruby_version }}
+      become_user: mastodon
