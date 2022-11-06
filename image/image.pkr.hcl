@@ -10,7 +10,6 @@ packer {
 locals {
   region  = "us-east-1"
   project = "buichadon-ubuntu"
-  #timestamp = regex_replace(timestamp(), "[- TZ:]", "")
 }
 
 source "amazon-ebs" "ubuntu" {

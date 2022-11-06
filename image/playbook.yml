@@ -20,10 +20,17 @@
           - acl # become を上手く機能するために必要
         state: present
 
+    - name: Get Node.js setup
+      get_url:
+        url: https://deb.nodesource.com/setup_16.x
+        dest: /root/node_setup.sh
+        mode: '0777'
     - name: Install Node.js
       shell: |
-        curl -sL https://deb.nodesource.com/setup_16.x | bash -
+        bash /root/node_setup.sh
         apt install -y nodejs
+        corepack enable
+        yarn set version stable
 
     - name: Install system packages
       package:
@@ -61,14 +68,40 @@
           - libidn11-dev
           - libicu-dev
           - libjemalloc-dev
-          - rbenv
         state: present
 
     - name: Add user, mastodon
       user:
         name: mastodon
-        #shell: /sbin/nologin
+        shell: /usr/bin/bash
 
-    - name: Install ruby
-      shell: rbenv install {{ ruby_version }}
+    - name: Install rbenv
+      shell: |
+        git clone https://github.com/rbenv/rbenv.git /home/mastodon/.rbenv
+        git clone https://github.com/rbenv/ruby-build.git /home/mastodon/.rbenv/plugins/ruby-build
+        echo 'eval "$(/home/mastodon/.rbenv/bin/rbenv init - bash)"' >> /home/mastodon/.bashrc
+      become_user: mastodon
+
+    - name: Install Ruby
+      shell: |
+        RUBY_CONFIGURE_OPTS=--with-jemalloc /home/mastodon/.rbenv/bin/rbenv install {{ ruby_version }} && \
+        /home/mastodon/.rbenv/bin/rbenv global {{ ruby_version }}
+      become_user: mastodon
+
+    ## TODO: owner が mastodon か確かめる
+    - name: Clone Mastodon
+      git:
+        repo: https://github.com/tootsuite/mastodon.git
+        dest: /home/mastodon/live
+        version: v3.5.3
+        depth: 1
+      become_user: mastodon
+
+    - name: Install Mastodon
+      shell: |
+        cd /home/mastodon/live && \
+        /home/mastodon/.rbenv/shims/bundle config deployment 'true' && \
+        /home/mastodon/.rbenv/shims/bundle config without 'development test' && \
+        /home/mastodon/.rbenv/shims/bundle install -j$(getconf _NPROCESSORS_ONLN) && \
+        yarn install --pure-lockfile
       become_user: mastodon
