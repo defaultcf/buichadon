@@ -23,17 +23,18 @@ resource "aws_security_group" "app" {
   vpc_id = aws_vpc.main.id
 
   ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    # curl -s https://ip-ranges.amazonaws.com/ip-ranges.json | jq -r '.prefixes[] | select(.service == "EC2_INSTANCE_CONNECT" and .region == "us-east-1") | .ip_prefix'
+    cidr_blocks = ["18.206.107.24/29"]
   }
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   egress {
@@ -50,7 +51,7 @@ resource "aws_security_group" "app" {
 
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.xlarge"
+  instance_type          = "t2.medium"
   subnet_id              = aws_subnet.public_1.id
   vpc_security_group_ids = [aws_security_group.app.id]
 
